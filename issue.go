@@ -125,6 +125,8 @@ func createIssues(ctx context.Context, client *github.Client, sourceOrg string, 
 		fmt.Printf("Issue: %s, number: %d\n", issu.GetTitle(), issu.GetNumber())
 		var labls *[]string
 		var lab []string
+		var assignees *[]string
+		var assign []string
 		if len(issu.Labels) > 0 {
 			for _, la := range issu.Labels {
 				if la != nil {
@@ -132,6 +134,16 @@ func createIssues(ctx context.Context, client *github.Client, sourceOrg string, 
 				}
 			}
 			labls = &lab
+		} else {
+			labls = nil
+		}
+		if len(issu.Assignees) != 0 {
+			for _, ass := range issu.Assignees {
+				if ass != nil {
+					assign = append(assign, ass.GetLogin())
+				}
+			}
+			assignees = &assign
 		} else {
 			labls = nil
 		}
@@ -161,6 +173,10 @@ func createIssues(ctx context.Context, client *github.Client, sourceOrg string, 
 		}
 		if len(issu.Labels) > 0 {
 			issueReq.Labels = labls
+		}
+		if len(issu.Assignees) != 0 {
+			fmt.Printf("Assignees:%s\n", *assignees)
+			issueReq.Assignees = assignees
 		}
 		if issu.Milestone.GetNumber() != 0 {
 			issueReq.Milestone = issu.Milestone.Number
@@ -231,7 +247,6 @@ func createIssue(ctx context.Context, client *github.Client, targetOrg string, t
 	}
 	issue, _, err := client.Issues.Create(ctx, targetOrg, targetRepoSit, req)
 	if err != nil {
-		fmt.Printf("ERROR")
 		return nil, false, fmt.Errorf("Error from issue create: %s\n", err)
 	}
 	return issue, true, nil

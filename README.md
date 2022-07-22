@@ -1,6 +1,6 @@
 # github-clone
 To clone GitHub issues with labels , milestones etc from a source repository to empty target .
-This script except the target repository with out any milestones, labels and issues
+This script expects the target repository with out any milestones, labels and issues
 
 Run:
 
@@ -22,4 +22,4 @@ set GITHUB_ENTERPRISE_URL only if you are working with an enterprise github
 4. ./github-clone
 
 TODO:
-Update assignee in the target issues
+Comments in the target issues
