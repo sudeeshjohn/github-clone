@@ -104,6 +104,9 @@ func createIssues(ctx context.Context, client *github.Client, sourceOrg string, 
 		PerPage: 100,
 	}
 	opts := &github.IssueListByRepoOptions{ListOptions: *lstopt, State: "all"}
+	sort := "created"
+	direction := "asc"
+	commopts := &github.IssueListCommentsOptions{Sort: &sort, Direction: &direction, ListOptions: *lstopt}
 	for {
 		issues, resp, err := client.Issues.ListByRepo(ctx, sourceOrg, sourceRepoSit, opts)
 		if err != nil {
@@ -127,6 +130,7 @@ func createIssues(ctx context.Context, client *github.Client, sourceOrg string, 
 		var lab []string
 		var assignees *[]string
 		var assign []string
+		var commentsList []*github.IssueComment
 		if len(issu.Labels) > 0 {
 			for _, la := range issu.Labels {
 				if la != nil {
@@ -187,6 +191,31 @@ func createIssues(ctx context.Context, client *github.Client, sourceOrg string, 
 			if *issu.State == "closed" {
 				issueReq.State = issu.State
 				client.Issues.Edit(ctx, targetOrg, targetRepoSit, *as.Number, issueReq)
+			}
+
+			if issu.GetComments() > 0 {
+				for {
+					comments, resp, err := client.Issues.ListComments(ctx, sourceOrg, sourceRepoSit, issu.GetNumber(), commopts)
+					if err != nil {
+						fmt.Errorf("Unable to get the comments: %s\n", err)
+					}
+					if len(comments) > 0 {
+						for _, comment := range comments {
+							commentsList = append(commentsList, comment)
+						}
+					}
+					if resp.NextPage == 0 {
+						break
+					}
+					commopts.ListOptions.Page = resp.NextPage
+				}
+				for i, comm := range commentsList {
+					fmt.Printf("Comment Number:%d ,,,,,%s\n", i, comm.GetBody())
+					_, _, err = client.Issues.CreateComment(ctx, targetOrg, targetRepoSit, *as.Number, comm)
+					if err != nil {
+						fmt.Errorf("unable to add the comment: %s\n", err)
+					}
+				}
 			}
 		} else {
 			if strings.Contains(err.Error(), "alreay there is an issue in the same number") {
